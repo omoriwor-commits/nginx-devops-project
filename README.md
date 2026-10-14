@@ -1,10 +1,8 @@
 # Nginx DevOps Project
 
-A hands-on DevOps portfolio project, originally completed as an assignment, that takes a simple Nginx web application through source control, containerization, image publishing, Kubernetes deployment, and CI/CD automation.
+A hands-on DevOps portfolio project that takes a simple Nginx web application through source control, containerization, image publishing, Kubernetes deployment, and CI/CD automation.
 
 **Portfolio scope:** Git, Docker, Docker Hub, Kubernetes, and GitHub Actions. This repository documents completed lab work; it does not represent production infrastructure.
-
-**Naming note:** The GitHub repository may be renamed to `nginx-devops-project`, but the existing Docker Hub image remains `rotezsolutions/nginx-devops-assignment`. These are independent names. Do not change the image reference in Kubernetes or CI/CD until a corresponding Docker Hub image has been created and verified.
 
 ## Architecture
 
