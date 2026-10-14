@@ -174,7 +174,7 @@ and the control-plane node reached `Ready` state.
 
 ### Deployment
 
-The Kubernetes Deployment runs two replicas and now consumes the image produced by the CI/CD pipeline:
+The Kubernetes Deployment runs two replicas and consumes the image produced by the CI/CD pipeline:
 
 ```yaml
 apiVersion: apps/v1
@@ -293,7 +293,7 @@ Workflow file:
 .github/workflows/docker-build-push.yml
 ```
 
-The workflow runs on pushes to `main`.
+The workflow runs on pushes to `main`. Documentation-only changes to Markdown (`.md`) files are excluded from triggering an image rebuild.
 
 It performs the following steps:
 
@@ -360,7 +360,7 @@ Application
 
 ## Validation Summary
 
-The following controls were validated successfully:
+The following steps were validated successfully:
 
 - Git repository initialized and synchronized with GitHub.
 - Docker image built successfully.
@@ -375,7 +375,7 @@ The following controls were validated successfully:
 - GitHub Actions authenticated to Docker Hub using repository secrets.
 - CI/CD workflow built and pushed the image automatically.
 - Docker Hub contains `v1`, `latest`, and commit-SHA image tags.
-- Kubernetes manifest now references the CI/CD-managed `latest` image and forces fresh pulls for new Pods.
+- Kubernetes manifest references the CI/CD-managed `latest` image and forces fresh pulls for new Pods.
 
 ## Security Notes
 
