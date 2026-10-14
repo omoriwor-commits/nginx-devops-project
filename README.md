@@ -40,7 +40,7 @@ Application access
 ## Repository Structure
 
 ```text
-nginx-devops-assignment/
+nginx-devops-project/
 ├── .github/
 │   └── workflows/
 │       └── docker-build-push.yml
@@ -65,21 +65,7 @@ The page identifies the lab components used:
 - Kubernetes
 
 ## Git Workflow
-
-The repository was initialized locally and pushed to GitHub.
-
-Typical commands used:
-
-```bash
-git init
-git status
-git add .
-git commit -m "Create initial Nginx application"
-git remote -v
-git push -u origin main
-```
-
-Later changes were committed separately, including Docker configuration, Kubernetes manifests, and the GitHub Actions workflow.
+The project was developed locally and pushed to GitHub, with Docker configuration, Kubernetes manifests and the GitHub Actions workflow committed separately.
 
 ## Docker
 
@@ -393,11 +379,9 @@ The following controls were validated successfully:
 
 ## Security Notes
 
-- Docker Hub credentials are not stored in source code.
-- GitHub Actions uses repository secrets for registry authentication.
-- The Docker Hub personal access token should be scoped only to the permissions required for this lab and rotated when no longer needed.
-- Secrets, passwords, SSH private keys, and tokens must never be committed to Git.
-- For a production environment, prefer immutable image digests or commit-SHA tags over `latest` for deterministic deployments.
+- Docker Hub credentials are stored only as GitHub Actions repository secrets, not in source code.
+- The Docker Hub token is scoped to the permissions this pipeline needs.
+- For production, I would deploy by commit-SHA tag or image digest instead of `latest` for deterministic rollouts.
 
 ## Status
 
