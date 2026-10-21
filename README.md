@@ -2,6 +2,8 @@
 
 A hands-on DevOps portfolio project that takes a simple Nginx web application through source control, containerization, image publishing, Kubernetes deployment, and CI/CD automation.
 
+**Current source revision:** The original lab was completed with an image on port 80. The October 21 hardening revision uses a non-root container on port 8080, probes, resource controls and deployment by digest. CI smoke tests validate the container; live Kubernetes revalidation of this revision remains pending.
+
 **Portfolio scope:** Git, Docker, Docker Hub, Kubernetes, and GitHub Actions. This repository documents completed lab work; it does not represent production infrastructure.
 
 ## Architecture
@@ -75,10 +77,12 @@ The application uses the Alpine-based Nginx image:
 
 ```dockerfile
 FROM nginx:alpine
-
+COPY nginx.conf /etc/nginx/nginx.conf
 COPY index.html /usr/share/nginx/html/index.html
-
-EXPOSE 80
+USER 101:101
+EXPOSE 8080
+ENTRYPOINT []
+CMD ["nginx", "-g", "daemon off;"]
 ```
 
 ### Build the image
@@ -90,7 +94,7 @@ docker build -t nginx-devops-assignment:v1 .
 ### Run the container
 
 ```bash
-docker run -d --name nginx-devops-app -p 8080:80 nginx-devops-assignment:v1
+docker run -d --name nginx-devops-app -p 8080:8080 nginx-devops-assignment:v1
 ```
 
 ### Verify the container
@@ -193,24 +197,24 @@ spec:
     spec:
       containers:
         - name: nginx-devops
-          image: rotezsolutions/nginx-devops-assignment:latest
-          imagePullPolicy: Always
+          image: nginx-devops-app:release-required
+          imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 80
+            - containerPort: 8080
 ```
 
-Using `latest` with `imagePullPolicy: Always` ensures that new Pods fetch the current CI/CD-published image rather than reusing the older manually pushed `v1` image.
+Using `latest` with `imagePullPolicy: IfNotPresent` ensures that new Pods fetch the current CI/CD-published image rather than reusing the older manually pushed `v1` image.
 
 Apply it with:
 
 ```bash
-kubectl apply -f k8s/deployment.yaml
+python3 scripts/render_deployment.py --image "rotezsolutions/nginx-devops-assignment@sha256:<published-digest>" > /tmp/nginx-deployment.yaml
+kubectl apply -f /tmp/nginx-deployment.yaml
 ```
 
-To force existing Pods to restart and pull the current image:
+After applying a new digest, verify the rollout (a restart alone does not select a new release):
 
 ```bash
-kubectl rollout restart deployment nginx-devops-deployment
 kubectl rollout status deployment nginx-devops-deployment
 ```
 
@@ -229,7 +233,7 @@ spec:
   ports:
     - protocol: TCP
       port: 80
-      targetPort: 80
+      targetPort: 8080
   type: NodePort
 ```
 
@@ -346,7 +350,7 @@ Docker build
 Docker Hub
    |
    v
-Kubernetes Deployment (latest)
+Kubernetes Deployment (explicit image digest)
    |
    v
 2 Nginx Pods
@@ -375,7 +379,7 @@ The following steps were validated successfully:
 - GitHub Actions authenticated to Docker Hub using repository secrets.
 - CI/CD workflow built and pushed the image automatically.
 - Docker Hub contains `v1`, `latest`, and commit-SHA image tags.
-- Kubernetes manifest references the CI/CD-managed `latest` image and forces fresh pulls for new Pods.
+- Historical manifest used `latest`; the current template requires an explicit published digest and live revalidation.
 
 ## Security Notes
 
@@ -386,3 +390,12 @@ The following steps were validated successfully:
 ## Status
 
 **Completed lab project: Git + Docker + Docker Hub + Kubernetes + GitHub Actions CI/CD.**
+
+
+## Current hardening and release procedure
+
+The Dockerfile now runs UID/GID 101, listens on 8080, and uses a custom NGINX configuration with temporary files under /tmp. Kubernetes drops capabilities, disables privilege escalation and service-account-token mounting, uses a read-only root filesystem, provides a bounded /tmp volume, and sets readiness/liveness probes and CPU/memory requests/limits. The base tag remains floating; deployment reproducibility comes from the published application digest. Pin and refresh a reviewed base-image digest as a separate dependency-maintenance step.
+
+Repository checks build and smoke-test the container without registry credentials on pull requests. The main publish job tests before login/publication, then records the published digest. It does not access a Kubernetes cluster or automatically deploy. Copy that full digest into the rendering command above, inspect the result, apply it to the intended lab context, and retain rollout/probe/security-context evidence. Do not apply the unrendered release-required template. Existing port-80 image digests are incompatible with this revision's port-8080 manifest.
+
+No Docker Hub credentials were changed. Historical success records above describe the original lab and are not evidence of a fresh Kubernetes run of this revision.
