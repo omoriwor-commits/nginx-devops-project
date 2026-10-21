@@ -197,7 +197,7 @@ spec:
     spec:
       containers:
         - name: nginx-devops
-          image: nginx-devops-app:release-required
+          image: rotezsolutions/nginx-devops-assignment@sha256:cff19586195359a469186ff5652af7e96f305624ae0ce94a659912ddfa72904a
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
@@ -379,7 +379,7 @@ The following steps were validated successfully:
 - GitHub Actions authenticated to Docker Hub using repository secrets.
 - CI/CD workflow built and pushed the image automatically.
 - Docker Hub contains `v1`, `latest`, and commit-SHA image tags.
-- Historical manifest used `latest`; the current template requires an explicit published digest and live revalidation.
+- Historical manifest used `latest`; the current manifest pins a published digest and requires live revalidation.
 
 ## Security Notes
 
@@ -396,6 +396,6 @@ The following steps were validated successfully:
 
 The Dockerfile now runs UID/GID 101, listens on 8080, and uses a custom NGINX configuration with temporary files under /tmp. Kubernetes drops capabilities, disables privilege escalation and service-account-token mounting, uses a read-only root filesystem, provides a bounded /tmp volume, and sets readiness/liveness probes and CPU/memory requests/limits. The base tag remains floating; deployment reproducibility comes from the published application digest. Pin and refresh a reviewed base-image digest as a separate dependency-maintenance step.
 
-Repository checks build and smoke-test the container without registry credentials on pull requests. The main publish job tests before login/publication, then records the published digest. It does not access a Kubernetes cluster or automatically deploy. Copy that full digest into the rendering command above, inspect the result, apply it to the intended lab context, and retain rollout/probe/security-context evidence. Do not apply the unrendered release-required template. Existing port-80 image digests are incompatible with this revision's port-8080 manifest.
+Repository checks build and smoke-test the container without registry credentials on pull requests. The main publish job tests before login/publication, then records the published digest. It does not access a Kubernetes cluster or automatically deploy. Copy that full digest into the rendering command above, inspect the result, apply it to the intended lab context, and retain rollout/probe/security-context evidence. The checked-in manifest already contains the smoke-tested published digest; use the renderer when choosing another release. Older port-80 image digests are incompatible with this revision's port-8080 manifest.
 
 No Docker Hub credentials were changed. Historical success records above describe the original lab and are not evidence of a fresh Kubernetes run of this revision.
