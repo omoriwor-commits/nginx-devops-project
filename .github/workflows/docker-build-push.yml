@@ -1,31 +1,45 @@
 name: Build and Push Docker Image
-
 on:
   push:
-    branches:
-      - main
-    paths-ignore:
-      - '**.md'
-
+    branches: [main]
+    paths:
+      - Dockerfile
+      - nginx.conf
+      - index.html
+      - .dockerignore
+      - .github/workflows/docker-build-push.yml
+permissions:
+  contents: read
+concurrency:
+  group: image-publish-${{ github.ref }}
+  cancel-in-progress: false
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 15
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - name: Build and smoke-test before publication
+        run: |
+          docker build -t nginx-release-test .
+          docker run -d --name nginx-release-test --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:8080:8080 nginx-release-test
+          trap 'docker logs nginx-release-test; docker rm -f nginx-release-test' EXIT
+          curl --fail --retry 10 --retry-delay 1 --retry-connrefused http://127.0.0.1:8080/
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: |
-            rotezsolutions/nginx-devops-assignment:latest
-            rotezsolutions/nginx-devops-assignment:${{ github.sha }}
+      - name: Publish the exact smoke-tested image
+        env:
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          image=rotezsolutions/nginx-devops-assignment
+          docker tag nginx-release-test "$image:$IMAGE_TAG"
+          docker tag nginx-release-test "$image:latest"
+          docker push "$image:$IMAGE_TAG"
+          docker push "$image:latest"
+          digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image:$IMAGE_TAG")
+          echo "Published image for manual deployment — $digest" >> "$GITHUB_STEP_SUMMARY"

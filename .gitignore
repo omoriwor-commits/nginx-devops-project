@@ -1,3 +1,9 @@
 *.log
 *.tmp
 .env
+
+
+# Local validation artifacts
+__pycache__/
+*.py[cod]
+.ruff_cache/
