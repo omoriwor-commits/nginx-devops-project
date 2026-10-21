@@ -22,8 +22,8 @@ spec:
           type: RuntimeDefault
       containers:
         - name: nginx-devops
-          # Render with scripts/render_deployment.py using the published image digest.
-          image: nginx-devops-app:release-required
+          # Smoke-tested and published by main workflow run 39685618734.
+          image: rotezsolutions/nginx-devops-assignment@sha256:cff19586195359a469186ff5652af7e96f305624ae0ce94a659912ddfa72904a
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
