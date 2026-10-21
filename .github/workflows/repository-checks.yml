@@ -31,7 +31,7 @@ jobs:
           docker build -t nginx-audit-test .
           docker run -d --name nginx-audit-test --read-only --tmpfs /tmp --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:8080:8080 nginx-audit-test
           trap 'docker logs nginx-audit-test; docker rm -f nginx-audit-test' EXIT
-          curl --fail --retry 10 --retry-delay 1 --retry-connrefused http://127.0.0.1:8080/
+          curl --silent --show-error --fail --retry-all-errors --retry 10 --retry-delay 1 --retry-max-time 30 --max-time 5 http://127.0.0.1:8080/
   secrets:
     runs-on: ubuntu-latest
     timeout-minutes: 10
